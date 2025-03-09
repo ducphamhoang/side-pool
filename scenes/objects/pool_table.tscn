@@ -1,18 +1,96 @@
-[gd_scene load_steps=3 format=3 uid="uid://table_scene_uid"]
+[gd_scene load_steps=9 format=3 uid="uid://table_scene_uid"]
 
 [sub_resource type="BoxMesh" id="BoxMesh_table"]
 size = Vector3(2.74, 0.1, 1.37)
 
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_green"]
+albedo_color = Color(0.0784314, 0.439216, 0.156863, 1)
+roughness = 0.7
+
 [sub_resource type="BoxShape3D" id="BoxShape3D_table"]
 size = Vector3(2.74, 0.1, 1.37)
+
+[sub_resource type="BoxMesh" id="BoxMesh_edge"]
+size = Vector3(3.0, 0.2, 0.1)
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_edge"]
+albedo_color = Color(0.392157, 0.196078, 0.0784314, 1)
+roughness = 0.5
+
+[sub_resource type="BoxShape3D" id="BoxShape3D_edge"]
+size = Vector3(3.0, 0.2, 0.1)
+
+[sub_resource type="PhysicsMaterial" id="PhysicsMaterial_edge"]
+bounce = 0.7
+absorbent = true
 
 [node name="PoolTable" type="StaticBody3D"]
 collision_mask = 2
 
-[node name="MeshInstance3D" type="MeshInstance3D" parent="."]
+[node name="TableSurface" type="MeshInstance3D" parent="."]
 mesh = SubResource("BoxMesh_table")
+surface_material_override/0 = SubResource("StandardMaterial3D_green")
 
 [node name="CollisionShape3D" type="CollisionShape3D" parent="."]
 shape = SubResource("BoxShape3D_table")
+
+[node name="Edges" type="Node3D" parent="."]
+
+[node name="TopEdge" type="StaticBody3D" parent="Edges"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.15, -0.735)
+collision_layer = 4
+collision_mask = 2
+physics_material_override = SubResource("PhysicsMaterial_edge")
+
+[node name="MeshInstance3D" type="MeshInstance3D" parent="Edges/TopEdge"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0)
+mesh = SubResource("BoxMesh_edge")
+surface_material_override/0 = SubResource("StandardMaterial3D_edge")
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="Edges/TopEdge"]
+shape = SubResource("BoxShape3D_edge")
+
+[node name="BottomEdge" type="StaticBody3D" parent="Edges"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.15, 0.735)
+collision_layer = 4
+collision_mask = 2
+physics_material_override = SubResource("PhysicsMaterial_edge")
+
+[node name="MeshInstance3D" type="MeshInstance3D" parent="Edges/BottomEdge"]
+mesh = SubResource("BoxMesh_edge")
+surface_material_override/0 = SubResource("StandardMaterial3D_edge")
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="Edges/BottomEdge"]
+shape = SubResource("BoxShape3D_edge")
+
+[node name="LeftEdge" type="StaticBody3D" parent="Edges"]
+transform = Transform3D(0, 0, 1, 0, 1, 0, -1, 0, 0, -1.42, 0.15, 0)
+collision_layer = 4
+collision_mask = 2
+physics_material_override = SubResource("PhysicsMaterial_edge")
+
+[node name="MeshInstance3D" type="MeshInstance3D" parent="Edges/LeftEdge"]
+transform = Transform3D(0.5, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0)
+mesh = SubResource("BoxMesh_edge")
+surface_material_override/0 = SubResource("StandardMaterial3D_edge")
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="Edges/LeftEdge"]
+transform = Transform3D(0.5, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0)
+shape = SubResource("BoxShape3D_edge")
+
+[node name="RightEdge" type="StaticBody3D" parent="Edges"]
+transform = Transform3D(0, 0, 1, 0, 1, 0, -1, 0, 0, 1.42, 0.15, 0)
+collision_layer = 4
+collision_mask = 2
+physics_material_override = SubResource("PhysicsMaterial_edge")
+
+[node name="MeshInstance3D" type="MeshInstance3D" parent="Edges/RightEdge"]
+transform = Transform3D(0.5, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0)
+mesh = SubResource("BoxMesh_edge")
+surface_material_override/0 = SubResource("StandardMaterial3D_edge")
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="Edges/RightEdge"]
+transform = Transform3D(0.5, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0)
+shape = SubResource("BoxShape3D_edge")
 
 [node name="Pockets" type="Node3D" parent="."]

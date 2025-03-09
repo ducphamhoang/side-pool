@@ -40,8 +40,7 @@ func update_trajectory(power: float = 1.0):
 		return
 		
 	# Get direction from cue stick to cue ball
-	var cue_stick_tip_pos = cue_stick.get_node("RayCast3D").global_position
-	var direction = (cue_ball.global_position - cue_stick_tip_pos).normalized()
+	var direction = -cue_stick.global_transform.basis.z.normalized()
 	
 	# Clear previous trajectory visualization
 	clear_line()
@@ -67,6 +66,7 @@ func update_trajectory(power: float = 1.0):
 		query.from = start_point + direction * 0.1  # Start slightly away from the ball
 		query.to = next_point
 		query.exclude = [cue_ball]
+		query.collision_mask = 4  # Only check for collisions with table edges
 		
 		var result = space_state.intersect_ray(query)
 		
@@ -74,6 +74,24 @@ func update_trajectory(power: float = 1.0):
 			# Hit something, add final dot at collision and stop
 			add_point(result.position, dot_index)
 			dot_index += 1
+			
+			# Calculate reflection vector for bounce visualization
+			var normal = result.normal
+			var reflection = direction.reflect(normal)
+			
+			# Add a few dots along the reflection path
+			var reflection_start = result.position
+			var reflection_distance = segment_length
+			var max_reflection_dots = 10
+			var reflection_dots = 0
+			
+			while dot_index < max_dots and reflection_dots < max_reflection_dots:
+				var reflection_point = reflection_start + reflection * reflection_distance
+				add_point(reflection_point, dot_index, 0.5)  # Lower alpha for reflection dots
+				dot_index += 1
+				reflection_dots += 1
+				reflection_distance += segment_length
+				
 			break
 		
 		# Add dot to trajectory
@@ -85,19 +103,18 @@ func update_trajectory(power: float = 1.0):
 	for i in range(dot_index, max_dots):
 		dots[i].visible = false
 
-func add_point(position: Vector3, index: int):
+func add_point(position: Vector3, index: int, alpha_multiplier: float = 1.0):
 	# Position the dot at the specified position
 	if index < dots.size():
 		dots[index].global_position = position
 		dots[index].visible = true
 		
 		# Make dots fade with distance
-		var alpha = 1.0 - (float(index) / float(max_dots))
-		var material = dots[index].mesh.material as StandardMaterial3D
+		var alpha = (1.0 - (float(index) / float(max_dots))) * alpha_multiplier
+		var material = dots[index].mesh.material.duplicate() as StandardMaterial3D
 		if material:
 			var color = material.albedo_color
 			color.a = alpha * 0.8
-			material = material.duplicate()
 			material.albedo_color = color
 			dots[index].mesh.material = material
 

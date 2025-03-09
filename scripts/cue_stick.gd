@@ -45,7 +45,8 @@ func _process(_delta):
 
 func position_stick():
     # Position the cue stick behind the cue ball
-    global_transform.origin = cue_ball.global_transform.origin
+    global_transform.origin = cue_ball.global_position
+    
     # Offset the stick backwards based on power
     var local_offset = Vector3(0, 0, 1 + power * 0.5)  # Adjust back distance with power
     global_transform.origin = global_transform.origin + global_transform.basis * local_offset
@@ -81,16 +82,18 @@ func _input(event):
         # Update current touch position
         current_touch_position = event.position
         
-        # Update aiming direction - rotate based on touch position relative to screen center
-        var screen_center = get_viewport().get_visible_rect().size / 2
-        var aim_direction = (event.position - screen_center).normalized()
-        var rotation_y = atan2(aim_direction.x, aim_direction.y)
+        # Calculate drag vector from start position
+        var drag_vector = current_touch_position - touch_start_position
         
-        # Apply rotation to cue stick
-        rotation.y = rotation_y
+        # Update aiming direction - rotate based on drag direction
+        if drag_vector.length() > 10:  # Small threshold to avoid jitter
+            var aim_direction = drag_vector.normalized()
+            # Convert 2D screen direction to 3D world direction
+            var rotation_y = atan2(-aim_direction.x, -aim_direction.y)
+            rotation.y = rotation_y
         
         # Calculate power based on drag distance from start
-        var drag_distance = touch_start_position.distance_to(event.position)
+        var drag_distance = touch_start_position.distance_to(current_touch_position)
         power = clamp(drag_distance / max_drag_distance, 0.0, 1.0)
         
         # Update power meter if available
@@ -112,9 +115,10 @@ func execute_shot():
     shot_taken = true
     is_aiming = false
     
-    # Emit signal that shot has been taken
-    # This could be connected to the game manager to handle turn switching
-    # emit_signal("shot_taken")
+    # Find the game manager and notify it that a shot has been taken
+    var game_manager = get_tree().get_first_node_in_group("game_manager")
+    if game_manager:
+        game_manager.game_state = game_manager.GameState.BALL_IN_MOTION
 
 func reset_for_next_shot():
     # Reset cue stick state for next shot

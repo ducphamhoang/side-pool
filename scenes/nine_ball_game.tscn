@@ -7,6 +7,7 @@
 [ext_resource type="PackedScene" path="res://scenes/objects/cue_stick.tscn" id="5_cue_stick"]
 [ext_resource type="Script" path="res://scripts/game_rules/nine_ball_rules.gd" id="6_rules"]
 [ext_resource type="PackedScene" path="res://scenes/objects/trajectory_line.tscn" id="7_trajectory"]
+[ext_resource type="PackedScene" path="res://scenes/objects/game_camera.tscn" id="8_camera"]
 
 [sub_resource type="Environment" id="Environment_h2pbi"]
 background_mode = 1
@@ -28,13 +29,7 @@ pocket_scene = ExtResource("4_pocket")
 cue_stick_scene = ExtResource("5_cue_stick")
 rules_script = ExtResource("6_rules")
 
-[node name="Camera3D" type="Camera3D" parent="."]
-transform = Transform3D(1, 0, 0, 0, 0.5, 0.866025, 0, -0.866025, 0.5, 0, 4, 2)
-current = true
-
-[node name="DirectionalLight3D" type="DirectionalLight3D" parent="."]
-transform = Transform3D(1, 0, 0, 0, 0.707107, 0.707107, 0, -0.707107, 0.707107, 0, 10, 0)
-shadow_enabled = true
+[node name="GameCamera" parent="." instance=ExtResource("8_camera")]
 
 [node name="WorldEnvironment" type="WorldEnvironment" parent="."]
 environment = SubResource("Environment_h2pbi")
