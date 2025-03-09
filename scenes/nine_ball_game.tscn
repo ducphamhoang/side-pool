@@ -1,12 +1,11 @@
 [gd_scene load_steps=9 format=3 uid="uid://b7m3v8xcjnsao"]
 
-[ext_resource type="Script" path="res://scripts/game_manager.gd" id="1_manager"]
+[ext_resource type="Script" uid="uid://dnijclrin3jw6" path="res://scripts/game_manager.gd" id="1_manager"]
 [ext_resource type="PackedScene" path="res://scenes/objects/pool_table.tscn" id="2_table"]
-[ext_resource type="PackedScene" path="res://scenes/objects/ball.tscn" id="3_ball"]
 [ext_resource type="PackedScene" path="res://scenes/objects/pocket.tscn" id="4_pocket"]
 [ext_resource type="PackedScene" path="res://scenes/objects/cue_stick.tscn" id="5_cue_stick"]
-[ext_resource type="Script" path="res://scripts/game_rules/nine_ball_rules.gd" id="6_rules"]
-[ext_resource type="PackedScene" path="res://scenes/objects/trajectory_line.tscn" id="7_trajectory"]
+[ext_resource type="Script" uid="uid://0itw17e8ejc0" path="res://scripts/game_rules/nine_ball_rules.gd" id="6_rules"]
+[ext_resource type="PackedScene" uid="uid://cj8syo8lbn3y3" path="res://scenes/objects/trajectory_line.tscn" id="7_trajectory"]
 [ext_resource type="PackedScene" path="res://scenes/objects/game_camera.tscn" id="8_camera"]
 
 [sub_resource type="Environment" id="Environment_h2pbi"]
@@ -22,9 +21,7 @@ glow_enabled = true
 
 [node name="GameManager" type="Node3D" parent="."]
 script = ExtResource("1_manager")
-game_type = "9ball"
 table_scene = ExtResource("2_table")
-ball_scene = ExtResource("3_ball")
 pocket_scene = ExtResource("4_pocket")
 cue_stick_scene = ExtResource("5_cue_stick")
 rules_script = ExtResource("6_rules")
@@ -70,4 +67,3 @@ offset_right = 220.0
 offset_bottom = -20.0
 grow_vertical = 0
 max_value = 1.0
-step = 0.01 

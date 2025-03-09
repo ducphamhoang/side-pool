@@ -1,18 +1,21 @@
 class_name GameManager
 extends Node3D
 
+# Preload required scripts
+const TableSetupScript = preload("res://scripts/table_setup.gd")
+
 @export var game_type: String = "9ball"  # Could be "8ball", "9ball", etc.
 @export var table_scene: PackedScene
-@export var ball_scene: PackedScene = preload("res://scenes/objects/ball.tscn")
+@export var ball_scene: PackedScene
 @export var pocket_scene: PackedScene
 @export var cue_stick_scene: PackedScene
 @export var rules_script: Script
 
 var rules
+var table_setup
 var cue_ball
 var cue_stick
 var balls = []
-var ball_positions: Dictionary = {}
 var current_player = 1
 var last_ball_hit = -1
 var game_over = false
@@ -27,9 +30,12 @@ func _ready():
 	# Add to the game_manager group for easier discovery
 	add_to_group("game_manager")
 	
+	# Initialize table setup
+	table_setup = TableSetupScript.new()
+	table_setup.initialize(self)
+	
+	# Initialize game objects on the table
 	setup_table()
-	setup_balls()
-	setup_cue_stick()
 	setup_trajectory()
 	
 	# Instantiate the rules
@@ -48,38 +54,13 @@ func _ready():
 	rules.start_game()
 
 func setup_table():
-	var table = table_scene.instantiate()
-	add_child(table)
+	# First instantiate the physical table
+	if table_scene:
+		var table = table_scene.instantiate()
+		add_child(table)
 	
-	# Setup pockets on the table
-	var pocket_positions = [
-		Vector3(-1.37, 0.05, -0.685),  # Top left
-		Vector3(0, 0.05, -0.685),      # Top center
-		Vector3(1.37, 0.05, -0.685),   # Top right
-		Vector3(-1.37, 0.05, 0.685),   # Bottom left
-		Vector3(0, 0.05, 0.685),       # Bottom center
-		Vector3(1.37, 0.05, 0.685)     # Bottom right
-	]
-	
-	for pos in pocket_positions:
-		var pocket = pocket_scene.instantiate()
-		pocket.position = pos
-		add_child(pocket)
-		pocket.connect("ball_entered", _on_ball_entered_pocket)
-
-func setup_balls():
-	# In a real implementation, this would be based on the rule set
-	# For 9-ball, it would set up the diamond rack with balls 1-9
-	# The rules object will handle this
-	pass
-
-func setup_cue_stick():
-	cue_stick = cue_stick_scene.instantiate()
-	add_child(cue_stick)
-	
-	# Let the rules system set the cue ball
-	if cue_ball:
-		cue_stick.setup(cue_ball)
+	# Use the table_setup to handle object positioning
+	table_setup.setup_table()
 
 func setup_trajectory():
 	trajectory_line = get_node_or_null("/root/NineBallGame/TrajectoryLine")
@@ -141,9 +122,9 @@ func _on_ball_collision(ball_a, ball_b):
 	rules.on_ball_collision(ball_a, ball_b)
 	
 	# Track the last ball hit by the cue ball for rules enforcement
-	if ball_a == cue_ball:
+	if ball_a.ball_number == 0:
 		last_ball_hit = ball_b.ball_number
-	elif ball_b == cue_ball:
+	elif ball_b.ball_number == 0:
 		last_ball_hit = ball_a.ball_number
 
 func _on_turn_changed(player_id):
@@ -169,3 +150,25 @@ func place_ball_in_hand():
 	cue_ball.set_sleeping(false)
 	
 	# TODO: Implement touch-based placing of the ball
+
+# Reset the game to initial state
+func reset_game():
+	# Reset table setup
+	table_setup.reset_table()
+	
+	# Reset game state
+	game_state = GameState.AIMING
+	current_player = 1
+	last_ball_hit = -1
+	game_over = false
+	
+	# Update trajectory
+	setup_trajectory()
+	
+	# Reset rules and start the game
+	if rules:
+		rules.start_game()
+
+# Change the layout (for custom arrangements)
+func set_custom_layout(cue_pos: Vector3, rack_pos: Vector3):
+	table_setup.setup_custom_layout(cue_pos, rack_pos)

@@ -1,49 +1,16 @@
 class_name NineBallRules
 extends GameRulesBase
 
-# Constants for nine-ball pool
+# Game specific constants
 const BALL_COUNT = 9
-const CUE_BALL_POSITION = Vector3(0, 0.5, 3)
-const RACK_POSITION = Vector3(0, 0.5, -2)
 
 # Called when the rules are applied to the game
 func setup_game(manager):
 	# Store the game manager
 	super.setup_game(manager)
 	
-	# Create the cue ball
-	var cue_ball = create_ball(0, CUE_BALL_POSITION)
-	game_manager.add_child(cue_ball)
-	game_manager.cue_ball = cue_ball
-	
-	# Create the rack of nine balls in a diamond formation
-	_create_rack()
-	
 	# Set up the game info display
 	game_manager.update_game_info("9-Ball Pool Game\nPlayer 1's Turn")
-
-# Create the rack of nine balls in the diamond formation used for 9-ball
-func _create_rack():
-	# Ball positions in the diamond formation
-	var positions = [
-		Vector3(0, 0, 0),                # 1-ball at the head
-		Vector3(-0.1, 0, -0.2),          # 2-ball
-		Vector3(0.1, 0, -0.2),           # 3-ball
-		Vector3(-0.2, 0, -0.4),          # 4-ball
-		Vector3(0, 0, -0.4),             # 5-ball
-		Vector3(0.2, 0, -0.4),           # 6-ball
-		Vector3(-0.1, 0, -0.6),          # 7-ball
-		Vector3(0.1, 0, -0.6),           # 8-ball
-		Vector3(0, 0, -0.8),             # 9-ball in the back
-	]
-	
-	# Create and position each ball
-	for i in range(BALL_COUNT):
-		var ball_number = i + 1
-		var ball_position = RACK_POSITION + positions[i]
-		var ball = create_ball(ball_number, ball_position)
-		game_manager.add_child(ball)
-		game_manager.balls.append(ball)
 
 # Handle ball pocketing according to nine-ball rules
 func on_ball_pocketed(ball):
