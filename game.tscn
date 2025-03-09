@@ -1,0 +1,249 @@
+[gd_scene load_steps=20 format=3 uid="uid://507p7ufb4vab"]
+
+[ext_resource type="Script" uid="uid://dnijclrin3jw6" path="res://scripts/game_manager.gd" id="1_xm5ua"]
+[ext_resource type="Script" uid="uid://iy3rj8l3a63t" path="res://scripts/ball.gd" id="2_hd47p"]
+[ext_resource type="Script" uid="uid://0itw17e8ejc0" path="res://scripts/game_rules/nine_ball_rules.gd" id="2_n7a3f"]
+[ext_resource type="Script" uid="uid://57a28mnyl2ti" path="res://scripts/cue_stick.gd" id="3_6kj8g"]
+[ext_resource type="Script" uid="uid://c5yl7i8bnx2ok" path="res://scripts/pocket.gd" id="4_fr3ve"]
+
+[sub_resource type="BoxMesh" id="BoxMesh_mwb40"]
+size = Vector3(2.74, 0.1, 1.37)
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_mwb40"]
+albedo_color = Color(0, 0.392157, 0, 1)
+roughness = 0.7
+
+[sub_resource type="BoxShape3D" id="BoxShape3D_80nbo"]
+size = Vector3(2.74, 0.1, 1.37)
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_80nbo"]
+metallic = 0.1
+roughness = 0.2
+
+[sub_resource type="SphereMesh" id="SphereMesh_e2o6t"]
+material = SubResource("StandardMaterial3D_80nbo")
+
+[sub_resource type="SphereShape3D" id="SphereShape3D_feb5d"]
+
+[sub_resource type="PhysicsMaterial" id="PhysicsMaterial_ball"]
+friction = 0.2
+bounce = 0.8
+
+[sub_resource type="SphereMesh" id="SphereMesh_ball"]
+radius = 0.05
+height = 0.1
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_1"]
+
+[sub_resource type="SphereShape3D" id="SphereShape3D_ball"]
+radius = 0.05
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_2"]
+albedo_color = Color(1, 1, 0, 1)
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_9"]
+albedo_color = Color(0.7, 0.7, 0.7, 1)
+
+[sub_resource type="CylinderMesh" id="CylinderMesh_cue"]
+top_radius = 0.01
+bottom_radius = 0.02
+height = 1.5
+
+[sub_resource type="SphereShape3D" id="SphereShape3D_pocket"]
+radius = 0.15
+
+[node name="Game" type="Node3D"]
+script = ExtResource("1_xm5ua")
+rules_script = ExtResource("2_n7a3f")
+
+[node name="Top-down-camera" type="Camera3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 0.5, 0.866025, 0, -0.866025, 0.5, 0, 10, 8)
+current = true
+
+[node name="DirectionalLight3D" type="DirectionalLight3D" parent="."]
+transform = Transform3D(0.707107, 0.5, -0.5, 0, 0.707107, 0.707107, 0.707107, -0.5, 0.5, 0, 0, 0)
+
+[node name="Table" type="MeshInstance3D" parent="."]
+mesh = SubResource("BoxMesh_mwb40")
+surface_material_override/0 = SubResource("StandardMaterial3D_mwb40")
+
+[node name="TableBody" type="StaticBody3D" parent="Table"]
+collision_mask = 2
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="Table/TableBody"]
+shape = SubResource("BoxShape3D_80nbo")
+
+[node name="CueBallBody" type="RigidBody3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.115345, 0)
+collision_layer = 2
+collision_mask = 4
+mass = 0.17
+linear_damp = 0.1
+angular_damp = 0.1
+
+[node name="CueBall" type="MeshInstance3D" parent="CueBallBody"]
+transform = Transform3D(0.1, 0, 0, 0, 0.1, 0, 0, 0, 0.1, 0, 0.322849, 0)
+mesh = SubResource("SphereMesh_e2o6t")
+skeleton = NodePath("../..")
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="CueBallBody"]
+transform = Transform3D(0.1, 0, 0, 0, 0.1, 0, 0, 0, 0.1, 0, 0, 0)
+shape = SubResource("SphereShape3D_feb5d")
+
+[node name="CueBall" type="RigidBody3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.5, 3)
+collision_layer = 2
+collision_mask = 7
+mass = 0.16
+physics_material_override = SubResource("PhysicsMaterial_ball")
+linear_damp = 0.5
+angular_damp = 0.5
+script = ExtResource("2_hd47p")
+ball_number = null
+
+[node name="MeshInstance3D" type="MeshInstance3D" parent="CueBall"]
+mesh = SubResource("SphereMesh_ball")
+surface_material_override/0 = SubResource("StandardMaterial3D_1")
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="CueBall"]
+shape = SubResource("SphereShape3D_ball")
+
+[node name="Ball1" type="RigidBody3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -0.5, 0.5, -2)
+collision_layer = 2
+collision_mask = 7
+mass = 0.16
+physics_material_override = SubResource("PhysicsMaterial_ball")
+linear_damp = 0.5
+angular_damp = 0.5
+script = ExtResource("2_hd47p")
+ball_number = 1
+
+[node name="MeshInstance3D" type="MeshInstance3D" parent="Ball1"]
+mesh = SubResource("SphereMesh_ball")
+surface_material_override/0 = SubResource("StandardMaterial3D_2")
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="Ball1"]
+shape = SubResource("SphereShape3D_ball")
+
+[node name="Ball2" type="RigidBody3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.5, -2)
+script = ExtResource("2_hd47p")
+ball_number = 2
+
+[node name="Ball9" type="RigidBody3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.5, -2.5)
+collision_layer = 2
+collision_mask = 7
+mass = 0.16
+physics_material_override = SubResource("PhysicsMaterial_ball")
+linear_damp = 0.5
+angular_damp = 0.5
+script = ExtResource("2_hd47p")
+ball_number = 9
+
+[node name="MeshInstance3D" type="MeshInstance3D" parent="Ball9"]
+mesh = SubResource("SphereMesh_ball")
+surface_material_override/0 = SubResource("StandardMaterial3D_9")
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="Ball9"]
+shape = SubResource("SphereShape3D_ball")
+
+[node name="CueStick" type="Node3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.5, 4.5)
+script = ExtResource("3_6kj8g")
+
+[node name="MeshInstance3D" type="MeshInstance3D" parent="CueStick"]
+transform = Transform3D(1, 0, 0, 0, -4.37114e-08, -1, 0, 1, -4.37114e-08, 0, 0, 0)
+mesh = SubResource("CylinderMesh_cue")
+
+[node name="RayCast3D" type="RayCast3D" parent="CueStick"]
+target_position = Vector3(0, 0, -2)
+collision_mask = 2
+
+[node name="Pockets" type="Node3D" parent="."]
+
+[node name="Pocket1" type="Area3D" parent="Pockets"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -4.5, 0, -8.5)
+collision_layer = 4
+collision_mask = 2
+script = ExtResource("4_fr3ve")
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="Pockets/Pocket1"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, -0.1, 0)
+shape = SubResource("SphereShape3D_pocket")
+
+[node name="Pocket2" type="Area3D" parent="Pockets"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, -8.5)
+collision_layer = 4
+collision_mask = 2
+script = ExtResource("4_fr3ve")
+
+[node name="Pocket3" type="Area3D" parent="Pockets"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 1.37, 0, -0.685)
+collision_layer = 4
+collision_mask = 2
+script = ExtResource("4_fr3ve")
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="Pockets/Pocket3"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, -0.1, 0)
+shape = SubResource("SphereShape3D_pocket")
+
+[node name="Pocket4" type="Area3D" parent="Pockets"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -1.37, 0, 0.685)
+collision_layer = 4
+collision_mask = 2
+script = ExtResource("4_fr3ve")
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="Pockets/Pocket4"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, -0.1, 0)
+shape = SubResource("SphereShape3D_pocket")
+
+[node name="Pocket5" type="Area3D" parent="Pockets"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0.685)
+collision_layer = 4
+collision_mask = 2
+script = ExtResource("4_fr3ve")
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="Pockets/Pocket5"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, -0.1, 0)
+shape = SubResource("SphereShape3D_pocket")
+
+[node name="Pocket6" type="Area3D" parent="Pockets"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 1.37, 0, 0.685)
+collision_layer = 4
+collision_mask = 2
+script = ExtResource("4_fr3ve")
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="Pockets/Pocket6"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, -0.1, 0)
+shape = SubResource("SphereShape3D_pocket")
+
+[node name="UI" type="Control" parent="."]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="GameInfo" type="Label" parent="UI"]
+layout_mode = 0
+offset_right = 300.0
+offset_bottom = 100.0
+text = "9-Ball Pool Game
+Player 1's Turn"
+
+[node name="PowerMeter" type="ProgressBar" parent="UI"]
+layout_mode = 1
+anchors_preset = 3
+anchor_left = 1.0
+anchor_top = 1.0
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_left = -150.0
+offset_top = -40.0
+offset_right = -20.0
+offset_bottom = -20.0
+grow_horizontal = 0
+grow_vertical = 0

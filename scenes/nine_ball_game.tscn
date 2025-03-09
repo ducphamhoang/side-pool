@@ -1,0 +1,78 @@
+[gd_scene load_steps=9 format=3 uid="uid://b7m3v8xcjnsao"]
+
+[ext_resource type="Script" path="res://scripts/game_manager.gd" id="1_manager"]
+[ext_resource type="PackedScene" path="res://scenes/objects/pool_table.tscn" id="2_table"]
+[ext_resource type="PackedScene" path="res://scenes/objects/ball.tscn" id="3_ball"]
+[ext_resource type="PackedScene" path="res://scenes/objects/pocket.tscn" id="4_pocket"]
+[ext_resource type="PackedScene" path="res://scenes/objects/cue_stick.tscn" id="5_cue_stick"]
+[ext_resource type="Script" path="res://scripts/game_rules/nine_ball_rules.gd" id="6_rules"]
+[ext_resource type="PackedScene" path="res://scenes/objects/trajectory_line.tscn" id="7_trajectory"]
+
+[sub_resource type="Environment" id="Environment_h2pbi"]
+background_mode = 1
+background_color = Color(0.184314, 0.184314, 0.184314, 1)
+ambient_light_source = 2
+ambient_light_color = Color(0.466667, 0.466667, 0.466667, 1)
+tonemap_mode = 2
+ssao_enabled = true
+glow_enabled = true
+
+[node name="NineBallGame" type="Node3D"]
+
+[node name="GameManager" type="Node3D" parent="."]
+script = ExtResource("1_manager")
+game_type = "9ball"
+table_scene = ExtResource("2_table")
+ball_scene = ExtResource("3_ball")
+pocket_scene = ExtResource("4_pocket")
+cue_stick_scene = ExtResource("5_cue_stick")
+rules_script = ExtResource("6_rules")
+
+[node name="Camera3D" type="Camera3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 0.5, 0.866025, 0, -0.866025, 0.5, 0, 4, 2)
+current = true
+
+[node name="DirectionalLight3D" type="DirectionalLight3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 0.707107, 0.707107, 0, -0.707107, 0.707107, 0, 10, 0)
+shadow_enabled = true
+
+[node name="WorldEnvironment" type="WorldEnvironment" parent="."]
+environment = SubResource("Environment_h2pbi")
+
+[node name="TrajectoryLine" parent="." instance=ExtResource("7_trajectory")]
+
+[node name="UI" type="Control" parent="."]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="GameInfo" type="Label" parent="UI"]
+layout_mode = 1
+anchors_preset = 5
+anchor_left = 0.5
+anchor_right = 0.5
+offset_left = -100.0
+offset_top = 20.0
+offset_right = 100.0
+offset_bottom = 60.0
+grow_horizontal = 2
+text = "9-Ball Pool
+Player 1's Turn"
+horizontal_alignment = 1
+
+[node name="PowerMeter" type="ProgressBar" parent="UI"]
+visible = false
+layout_mode = 1
+anchors_preset = 2
+anchor_top = 1.0
+anchor_bottom = 1.0
+offset_left = 20.0
+offset_top = -40.0
+offset_right = 220.0
+offset_bottom = -20.0
+grow_vertical = 0
+max_value = 1.0
+step = 0.01 

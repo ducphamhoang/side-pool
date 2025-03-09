@@ -1,0 +1,19 @@
+[gd_scene load_steps=3 format=3 uid="uid://cue_uid"]
+
+[ext_resource type="Script" path="res://scripts/cue_stick.gd" id="1_cuestick"]
+
+[sub_resource type="CylinderMesh" id="CylinderMesh_cue"]
+top_radius = 0.01
+bottom_radius = 0.02
+height = 1.5
+
+[node name="CueStick" type="Node3D"]
+script = ExtResource("1_cuestick")
+
+[node name="MeshInstance3D" type="MeshInstance3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, -4.37114e-08, -1, 0, 1, -4.37114e-08, 0, 0, 0)
+mesh = SubResource("CylinderMesh_cue")
+
+[node name="RayCast3D" type="RayCast3D" parent="."]
+target_position = Vector3(0, 0, -2)
+collision_mask = 2

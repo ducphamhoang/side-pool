@@ -1,0 +1,23 @@
+[gd_scene load_steps=4 format=3 uid="uid://cj8syo8lbn3y3"]
+
+[ext_resource type="Script" path="res://scripts/trajectory_visualization.gd" id="1_tfb5h"]
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_p33ev"]
+albedo_color = Color(1, 1, 1, 0.5)
+emission_enabled = true
+emission = Color(1, 1, 1, 1)
+
+[sub_resource type="SphereMesh" id="SphereMesh_wf8c3"]
+material = SubResource("StandardMaterial3D_p33ev")
+radius = 0.02
+height = 0.04
+radial_segments = 8
+rings = 4
+
+[node name="TrajectoryLine" type="Node3D"]
+script = ExtResource("1_tfb5h")
+
+[node name="DotContainer" type="Node3D" parent="."]
+
+[node name="Dot" type="MeshInstance3D" parent="DotContainer"]
+mesh = SubResource("SphereMesh_wf8c3") 

@@ -1,0 +1,18 @@
+[gd_scene load_steps=3 format=3 uid="uid://table_scene_uid"]
+
+[sub_resource type="BoxMesh" id="BoxMesh_table"]
+size = Vector3(2.74, 0.1, 1.37)
+
+[sub_resource type="BoxShape3D" id="BoxShape3D_table"]
+size = Vector3(2.74, 0.1, 1.37)
+
+[node name="PoolTable" type="StaticBody3D"]
+collision_mask = 2
+
+[node name="MeshInstance3D" type="MeshInstance3D" parent="."]
+mesh = SubResource("BoxMesh_table")
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="."]
+shape = SubResource("BoxShape3D_table")
+
+[node name="Pockets" type="Node3D" parent="."]
