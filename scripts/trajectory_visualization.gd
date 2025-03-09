@@ -9,10 +9,11 @@ extends Node3D
 var cue_ball: RigidBody3D
 var cue_stick: Node3D
 var is_visible_trajectory: bool = false
-var max_distance: float = 10.0
-var segment_length: float = 0.2
-var max_dots: int = 50
+var max_distance: float = 4.0  # Reduced for more accurate short-range prediction
+var segment_length: float = 0.075  # Smaller segments for smoother visualization
+var max_dots: int = 40  # More dots for better visualization
 var dots = []
+var table_height: float = 0.06  # Height of the table surface
 
 func _ready():
 	# Initially hide the trajectory
@@ -35,38 +36,52 @@ func set_trajectory_visible(value: bool):
 		for dot in dots:
 			dot.visible = false
 
-func update_trajectory(power: float = 1.0):
-	if not is_visible_trajectory or not cue_ball or not cue_stick:
+func update_trajectory(power: float = 1.0, direction: Vector3 = Vector3.ZERO):
+	if not is_visible_trajectory or not cue_ball:
 		return
-		
-	# Get direction from cue stick to cue ball
-	var direction = -cue_stick.global_transform.basis.z.normalized()
+	
+	# Use provided direction if given, otherwise try to get it from cue stick
+	var shot_direction = direction
+	if shot_direction == Vector3.ZERO and cue_stick:
+		shot_direction = (cue_ball.global_position - cue_stick.global_position).normalized()
+	
+	if shot_direction == Vector3.ZERO:
+		return  # No valid direction found
+	
+	# Ensure the direction is parallel to the table
+	shot_direction.y = 0
+	shot_direction = shot_direction.normalized()
 	
 	# Clear previous trajectory visualization
 	clear_line()
 	
-	# Start point is the cue ball position
+	# Start point is the cue ball position, but ensure it's at table height
 	var start_point = cue_ball.global_position
+	start_point.y = table_height
 	
 	# Set up physics space state for raycast
 	var space_state = get_world_3d().direct_space_state
-	var current_distance = segment_length  # Start a bit ahead of the ball
+	var current_distance = 0.1  # Start just ahead of the ball
 	
 	# Calculate adjusted max distance based on power
-	var adjusted_max_distance = max_distance * power
+	var adjusted_max_distance = max_distance * max(power, 0.2)  # Min power for visualization
 	var dot_index = 0
 	
 	# Continue adding dots until max distance, collision, or max dots reached
 	while current_distance < adjusted_max_distance and dot_index < max_dots:
-		# Calculate next point
-		var next_point = start_point + direction * current_distance
+		# Calculate next point (always at table height)
+		var next_point = Vector3(
+			start_point.x + shot_direction.x * current_distance,
+			table_height,
+			start_point.z + shot_direction.z * current_distance
+		)
 		
 		# Check for collision
 		var query = PhysicsRayQueryParameters3D.new()
-		query.from = start_point + direction * 0.1  # Start slightly away from the ball
+		query.from = start_point + shot_direction * 0.06  # Start slightly away from the ball (ball radius)
 		query.to = next_point
 		query.exclude = [cue_ball]
-		query.collision_mask = 4  # Only check for collisions with table edges
+		query.collision_mask = 6  # Check for collisions with table (2) and edges (4)
 		
 		var result = space_state.intersect_ray(query)
 		
@@ -77,17 +92,28 @@ func update_trajectory(power: float = 1.0):
 			
 			# Calculate reflection vector for bounce visualization
 			var normal = result.normal
-			var reflection = direction.reflect(normal)
+			normal.y = 0  # Keep reflection in the horizontal plane
+			normal = normal.normalized()
+			
+			var reflection = shot_direction.reflect(normal)
+			reflection.y = 0  # Ensure it stays parallel to table
+			reflection = reflection.normalized()
 			
 			# Add a few dots along the reflection path
 			var reflection_start = result.position
+			reflection_start.y = table_height  # Keep at table height
 			var reflection_distance = segment_length
-			var max_reflection_dots = 10
+			var max_reflection_dots = min(20, max_dots - dot_index)  # Ensure we don't exceed array bounds
 			var reflection_dots = 0
 			
 			while dot_index < max_dots and reflection_dots < max_reflection_dots:
-				var reflection_point = reflection_start + reflection * reflection_distance
-				add_point(reflection_point, dot_index, 0.5)  # Lower alpha for reflection dots
+				var reflection_point = Vector3(
+					reflection_start.x + reflection.x * reflection_distance,
+					table_height,
+					reflection_start.z + reflection.z * reflection_distance
+				)
+				
+				add_point(reflection_point, dot_index, 0.7)  # Lower alpha for reflection dots
 				dot_index += 1
 				reflection_dots += 1
 				reflection_distance += segment_length
@@ -101,9 +127,13 @@ func update_trajectory(power: float = 1.0):
 		
 	# Make sure we don't show more dots than we've used
 	for i in range(dot_index, max_dots):
-		dots[i].visible = false
+		if i < dots.size():  # Safety check to prevent index error
+			dots[i].visible = false
 
 func add_point(position: Vector3, index: int, alpha_multiplier: float = 1.0):
+	# Always keep dots at table height
+	position.y = table_height
+	
 	# Position the dot at the specified position
 	if index < dots.size():
 		dots[index].global_position = position

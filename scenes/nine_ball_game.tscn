@@ -1,9 +1,9 @@
 [gd_scene load_steps=9 format=3 uid="uid://b7m3v8xcjnsao"]
 
 [ext_resource type="Script" uid="uid://dnijclrin3jw6" path="res://scripts/game_manager.gd" id="1_manager"]
-[ext_resource type="PackedScene" path="res://scenes/objects/pool_table.tscn" id="2_table"]
+[ext_resource type="PackedScene" uid="uid://cryu2o01rnq33" path="res://scenes/objects/pool_table.tscn" id="2_table"]
 [ext_resource type="PackedScene" path="res://scenes/objects/pocket.tscn" id="4_pocket"]
-[ext_resource type="PackedScene" path="res://scenes/objects/cue_stick.tscn" id="5_cue_stick"]
+[ext_resource type="PackedScene" uid="uid://bck0kjst5ndqo" path="res://scenes/objects/cue_stick.tscn" id="5_cue_stick"]
 [ext_resource type="Script" uid="uid://0itw17e8ejc0" path="res://scripts/game_rules/nine_ball_rules.gd" id="6_rules"]
 [ext_resource type="PackedScene" uid="uid://cj8syo8lbn3y3" path="res://scenes/objects/trajectory_line.tscn" id="7_trajectory"]
 [ext_resource type="PackedScene" path="res://scenes/objects/game_camera.tscn" id="8_camera"]

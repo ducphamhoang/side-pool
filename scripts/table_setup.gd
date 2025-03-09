@@ -6,9 +6,9 @@ const BALL_RADIUS = 0.05      # Ball radius from ball.tscn
 const BALL_DIAMETER = BALL_RADIUS * 2
 const BALL_SPACING = BALL_DIAMETER * 1.05  # Slight spacing between balls
 
-# Object positioning variables (no longer constants)
+# Object positioning variables
 var cue_ball_position = Vector3(-0.9, 0.06, 0)  # Left side of the table (head spot)
-var rack_position = Vector3(0.7, 0.06, 0)       # Right side of the table (foot spot)
+var rack_position = Vector3(0.6, 0.06, 0)       # Right side of the table (foot spot)
 
 var game_manager: Node
 var balls = []
@@ -40,26 +40,38 @@ func setup_cue_ball():
 	cue_ball = ball
 	game_manager.cue_ball = ball
 	
-# Setup the rack for 9-ball
+# Setup the rack for 9-ball in a proper tight triangle formation
 func setup_rack_9ball():
 	balls.clear()
 	
-	# Calculate positions for a proper diamond rack formation
-	# The diamond rack has 5 rows in this pattern: 1-2-3-2-1
+	# Calculate positions for a proper triangle rack formation
+	# In 9-ball, we use a triangle with 5 rows: 1-2-3-2-1 (15 total positions, but we only use 9)
+	# The spacing factor creates an equilateral triangle
+	var row_spacing = BALL_SPACING * 0.866  # sqrt(3)/2 for equilateral triangle height
+	
 	var row_offsets = [
-		Vector3(0, 0, 0),                                     # Row 1: 1-ball at the apex (front)
-		Vector3(-BALL_SPACING/2, 0, BALL_SPACING*0.866),      # Row 2: Left ball
-		Vector3(BALL_SPACING/2, 0, BALL_SPACING*0.866),       # Row 2: Right ball
-		Vector3(-BALL_SPACING, 0, BALL_SPACING*0.866*2),      # Row 3: Left ball
-		Vector3(0, 0, BALL_SPACING*0.866*2),                  # Row 3: Center ball (9-ball position)
-		Vector3(BALL_SPACING, 0, BALL_SPACING*0.866*2),       # Row 3: Right ball
-		Vector3(-BALL_SPACING/2, 0, BALL_SPACING*0.866*3),    # Row 4: Left ball
-		Vector3(BALL_SPACING/2, 0, BALL_SPACING*0.866*3),     # Row 4: Right ball
-		Vector3(0, 0, BALL_SPACING*0.866*4),                  # Row 5: Back ball
+		# Row 1: 1 ball at the apex
+		Vector3(0, 0, 0),  # 1-ball at the front (apex)
+		
+		# Row 2: 2 balls in second row
+		Vector3(-BALL_SPACING/2, 0, row_spacing),  # Left ball
+		Vector3(BALL_SPACING/2, 0, row_spacing),   # Right ball
+		
+		# Row 3: 3 balls in middle row
+		Vector3(-BALL_SPACING, 0, row_spacing*2),      # Left ball
+		Vector3(0, 0, row_spacing*2),                  # Center ball (9-ball)
+		Vector3(BALL_SPACING, 0, row_spacing*2),       # Right ball
+		
+		# Row 4: 2 balls in fourth row
+		Vector3(-BALL_SPACING/2, 0, row_spacing*3),    # Left ball
+		Vector3(BALL_SPACING/2, 0, row_spacing*3),     # Right ball
+		
+		# Row 5: 1 ball at the back
+		Vector3(0, 0, row_spacing*4)                   # Back ball
 	]
 	
 	# Ball positions in standard 9-ball formation
-	# 1-ball at the apex (front), 9-ball in the center (5th position), others can be random
+	# 1-ball at the apex (front), 9-ball in the center (5th position), others in a specific order
 	var ball_numbers = [1, 2, 3, 4, 9, 5, 6, 7, 8]
 	
 	# Create and position each ball
@@ -77,20 +89,53 @@ func setup_rack_9ball():
 func setup_cue_stick():
 	if game_manager.cue_stick_scene == null:
 		push_error("Cue stick scene not assigned in GameManager")
+		# Create a default cue stick scene if one is not assigned
+		var default_cue_stick = create_default_cue_stick()
+		if default_cue_stick:
+			game_manager.add_child(default_cue_stick)
+			cue_stick = default_cue_stick
+			game_manager.cue_stick = default_cue_stick
+			
+			# Setup the stick with reference to the cue ball
+			if cue_stick.has_method("setup"):
+				cue_stick.setup(cue_ball)
 		return
 		
 	var stick = game_manager.cue_stick_scene.instantiate()
+	# Ensure the stick is visible
+	stick.visible = true
+	
+	# Add the stick to the scene
 	game_manager.add_child(stick)
 	cue_stick = stick
 	game_manager.cue_stick = stick
 	
-	# Position cue stick in relation to cue ball
-	stick.position = cue_ball_position + Vector3(0, 0, 0.3)
-	stick.look_at(cue_ball_position, Vector3.UP)
+	# In the new orbital aiming system, we don't need to pre-position the stick
+	# The stick's setup function will handle initial positioning properly
 	
 	# Setup the stick with reference to the cue ball
 	if stick.has_method("setup"):
 		stick.setup(cue_ball)
+	
+	print("Cue stick instantiated: ", stick != null)
+	print("Cue stick visible: ", stick.visible)
+	print("Cue stick position: ", stick.global_position)
+
+# Create a default cue stick if none is assigned
+func create_default_cue_stick():
+	print("Creating default cue stick")
+	var stick = Node3D.new()
+	stick.name = "DefaultCueStick"
+	
+	# Add the adapter script
+	var script = load("res://scripts/cue_stick_adapter.gd")
+	if script:
+		stick.set_script(script)
+	else:
+		push_error("Could not load cue_stick_adapter.gd script")
+		return null
+	
+	return stick
 
 # Setup pockets around the table
 func setup_pockets():
@@ -126,6 +171,17 @@ func create_ball(ball_number, position):
 	var ball = ball_scene.instantiate()
 	ball.ball_number = ball_number
 	ball.position = position
+	
+	# Set appropriate ball type based on number
+	if ball_number == 0:
+		ball.ball_type = 2  # Cue ball
+	elif ball_number == 8:
+		ball.ball_type = 3  # Black ball (8-ball)
+	elif ball_number > 8:
+		ball.ball_type = 1  # Striped
+	else:
+		ball.ball_type = 0  # Solid
+	
 	return ball
 
 # Reset the table to initial state

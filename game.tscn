@@ -99,7 +99,6 @@ physics_material_override = SubResource("PhysicsMaterial_ball")
 linear_damp = 0.5
 angular_damp = 0.5
 script = ExtResource("2_hd47p")
-ball_number = null
 
 [node name="MeshInstance3D" type="MeshInstance3D" parent="CueBall"]
 mesh = SubResource("SphereMesh_ball")

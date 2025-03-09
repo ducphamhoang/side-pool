@@ -1,4 +1,6 @@
-[gd_scene load_steps=9 format=3 uid="uid://table_scene_uid"]
+[gd_scene load_steps=9 format=3 uid="uid://cryu2o01rnq33"]
+
+[ext_resource type="Script" uid="uid://byhg3rokckikb" path="res://scripts/pool_table.gd" id="1_ojga6"]
 
 [sub_resource type="BoxMesh" id="BoxMesh_table"]
 size = Vector3(2.74, 0.1, 1.37)
@@ -10,22 +12,24 @@ roughness = 0.7
 [sub_resource type="BoxShape3D" id="BoxShape3D_table"]
 size = Vector3(2.74, 0.1, 1.37)
 
+[sub_resource type="PhysicsMaterial" id="PhysicsMaterial_edge"]
+friction = 0.05
+bounce = 0.8
+absorbent = true
+
 [sub_resource type="BoxMesh" id="BoxMesh_edge"]
-size = Vector3(3.0, 0.2, 0.1)
+size = Vector3(3, 0.2, 0.1)
 
 [sub_resource type="StandardMaterial3D" id="StandardMaterial3D_edge"]
 albedo_color = Color(0.392157, 0.196078, 0.0784314, 1)
 roughness = 0.5
 
 [sub_resource type="BoxShape3D" id="BoxShape3D_edge"]
-size = Vector3(3.0, 0.2, 0.1)
-
-[sub_resource type="PhysicsMaterial" id="PhysicsMaterial_edge"]
-bounce = 0.7
-absorbent = true
+size = Vector3(3, 0.2, 0.1)
 
 [node name="PoolTable" type="StaticBody3D"]
 collision_mask = 2
+script = ExtResource("1_ojga6")
 
 [node name="TableSurface" type="MeshInstance3D" parent="."]
 mesh = SubResource("BoxMesh_table")
@@ -43,7 +47,6 @@ collision_mask = 2
 physics_material_override = SubResource("PhysicsMaterial_edge")
 
 [node name="MeshInstance3D" type="MeshInstance3D" parent="Edges/TopEdge"]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0)
 mesh = SubResource("BoxMesh_edge")
 surface_material_override/0 = SubResource("StandardMaterial3D_edge")
 

@@ -1,0 +1,21 @@
+[gd_scene load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/test_cue_stick_drag.gd" id="1_test_script"]
+
+[node name="TestCueStickDrag" type="Node3D"]
+script = ExtResource("1_test_script")
+
+[node name="DirectionalLight3D" type="DirectionalLight3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 0.866025, 0.5, 0, -0.5, 0.866025, 0, 5, 0)
+shadow_enabled = true
+
+[node name="Instructions" type="Label" parent="."]
+offset_left = 20.0
+offset_top = 100.0
+offset_right = 400.0
+offset_bottom = 250.0
+text = "Cue Stick Drag Test
+
+Press T to run automated tests
+Press R to reset stick position
+Use mouse to test dragging manually" 

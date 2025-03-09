@@ -1,19 +1,45 @@
-[gd_scene load_steps=3 format=3 uid="uid://cue_uid"]
+[gd_scene load_steps=5 format=3 uid="uid://bck0kjst5ndqo"]
 
-[ext_resource type="Script" path="res://scripts/cue_stick.gd" id="1_cuestick"]
+[ext_resource type="Script" uid="uid://57a28mnyl2ti" path="res://scripts/cue_stick.gd" id="1_cuestick"]
 
-[sub_resource type="CylinderMesh" id="CylinderMesh_cue"]
+[sub_resource type="CylinderMesh" id="CylinderMesh_stick"]
 top_radius = 0.01
 bottom_radius = 0.02
-height = 1.5
+height = 1.2
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_stick"]
+albedo_color = Color(0.8, 0.6, 0.4, 1)
+metallic = 0.1
+roughness = 0.2
+
+[sub_resource type="CapsuleShape3D" id="CapsuleShape3D_stick"]
+radius = 0.015
+height = 1.2
 
 [node name="CueStick" type="Node3D"]
 script = ExtResource("1_cuestick")
 
-[node name="MeshInstance3D" type="MeshInstance3D" parent="."]
-transform = Transform3D(1, 0, 0, 0, -4.37114e-08, -1, 0, 1, -4.37114e-08, 0, 0, 0)
-mesh = SubResource("CylinderMesh_cue")
-
 [node name="RayCast3D" type="RayCast3D" parent="."]
 target_position = Vector3(0, 0, -2)
 collision_mask = 2
+
+[node name="StickMesh" type="MeshInstance3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, -4.37114e-08, 1, 0, -1, -4.37114e-08, 0, 0, -0.6)
+mesh = SubResource("CylinderMesh_stick")
+surface_material_override/0 = SubResource("StandardMaterial3D_stick")
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, -4.37114e-08, 1, 0, -1, -4.37114e-08, 0, 0, -0.6)
+shape = SubResource("CapsuleShape3D_stick")
+
+[node name="HeadLabel" type="Label3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.1, -1.2)
+pixel_size = 0.002
+text = "Head"
+font_size = 64
+
+[node name="TailLabel" type="Label3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.1, 0)
+pixel_size = 0.002
+text = "Tail"
+font_size = 64

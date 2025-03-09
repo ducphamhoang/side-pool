@@ -63,11 +63,28 @@ func setup_table():
 	table_setup.setup_table()
 
 func setup_trajectory():
+	# Get the trajectory line directly from the scene tree
 	trajectory_line = get_node_or_null("/root/NineBallGame/TrajectoryLine")
 	
-	if trajectory_line and cue_stick and cue_ball:
-		trajectory_line.cue_stick = cue_stick
+	# Make sure it exists
+	if not trajectory_line:
+		push_warning("Trajectory line not found in scene tree.")
+		return
+		
+	# Connect it to the cue ball and cue stick if available
+	if cue_stick and cue_ball:
 		trajectory_line.cue_ball = cue_ball
+		trajectory_line.cue_stick = cue_stick
+		
+		# Ensure it's initialized properly
+		trajectory_line.update_trajectory(0.2)
+		
+		# For debugging, make it visible briefly then hide
+		trajectory_line.set_trajectory_visible(true)
+		
+		# Create a timer to hide it after a moment (for debugging purposes)
+		var timer = get_tree().create_timer(1.0)
+		timer.timeout.connect(func(): trajectory_line.set_trajectory_visible(false))
 
 func _process(delta):
 	match game_state:
@@ -92,9 +109,18 @@ func _process(delta):
 func all_balls_have_stopped():
 	# Check if all balls have stopped moving
 	for ball in balls:
-		if ball.linear_velocity.length() > 0.1:
+		if is_instance_valid(ball) and ball.linear_velocity.length() > 0.1:
 			return false
+			
+	# Also check cue ball separately (it might not be in the balls array)
+	if is_instance_valid(cue_ball) and cue_ball.linear_velocity.length() > 0.1:
+		return false
+		
 	return true
+
+# New method specifically for the cue stick to call
+func are_all_balls_stopped():
+	return all_balls_have_stopped()
 
 func process_shot_outcome():
 	# Let the rules determine the outcome

@@ -1,0 +1,40 @@
+[gd_scene load_steps=5 format=3 uid="uid://1t5fxsgbj3rx"]
+
+[ext_resource type="Script" path="res://scripts/test_aiming.gd" id="1_test_aiming"]
+
+[sub_resource type="BoxShape3D" id="BoxShape3D_floor"]
+size = Vector3(5, 0.1, 5)
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_floor"]
+albedo_color = Color(0.121569, 0.533333, 0.298039, 1)
+
+[sub_resource type="BoxMesh" id="BoxMesh_floor"]
+material = SubResource("StandardMaterial3D_floor")
+size = Vector3(5, 0.1, 5)
+
+[node name="TestAiming" type="Node3D"]
+script = ExtResource("1_test_aiming")
+
+[node name="DirectionalLight3D" type="DirectionalLight3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 0.707107, 0.707107, 0, -0.707107, 0.707107, 0, 5, 0)
+shadow_enabled = true
+
+[node name="Floor" type="StaticBody3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, -0.05, 0)
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="Floor"]
+shape = SubResource("BoxShape3D_floor")
+
+[node name="MeshInstance3D" type="MeshInstance3D" parent="Floor"]
+mesh = SubResource("BoxMesh_floor")
+
+[node name="Instructions" type="Label" parent="."]
+offset_left = 20.0
+offset_top = 100.0
+offset_right = 367.0
+offset_bottom = 204.0
+text = "Cue Stick Aiming Test
+
+Click and drag to aim the cue stick
+Press R to reset
+Press SPACE to shoot" 
