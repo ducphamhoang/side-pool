@@ -6,7 +6,7 @@
 [ext_resource type="PackedScene" uid="uid://bck0kjst5ndqo" path="res://scenes/objects/cue_stick.tscn" id="5_cue_stick"]
 [ext_resource type="Script" uid="uid://0itw17e8ejc0" path="res://scripts/game_rules/nine_ball_rules.gd" id="6_rules"]
 [ext_resource type="PackedScene" uid="uid://cj8syo8lbn3y3" path="res://scenes/objects/trajectory_line.tscn" id="7_trajectory"]
-[ext_resource type="PackedScene" path="res://scenes/objects/game_camera.tscn" id="8_camera"]
+[ext_resource type="PackedScene" uid="uid://dxnvyqnvx8yjm" path="res://scenes/objects/game_camera.tscn" id="8_camera"]
 
 [sub_resource type="Environment" id="Environment_h2pbi"]
 background_mode = 1

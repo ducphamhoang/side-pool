@@ -3,7 +3,8 @@ extends Node3D
 var cue_ball: RigidBody3D
 var power: float = 0.0
 var max_power: float = 15.0
-var is_aiming: bool = true
+var is_aiming: bool = false # Set to true when in aiming state
+var is_power_setting: bool = false # Set to true when in power state
 var shot_taken: bool = false
 var touch_start_position: Vector2
 var current_touch_position: Vector2
@@ -37,6 +38,9 @@ var aim_angle: float = 0.0
 # For smoother aiming
 var current_aim_direction: Vector3 = Vector3(0, 0, -1)
 
+# Game manager reference
+var game_manager: GameManager
+
 @onready var ray_cast = $RayCast3D
 @onready var power_meter = get_node_or_null("/root/NineBallGame/UI/PowerMeter")
 
@@ -65,6 +69,67 @@ func _ready():
 	if power_meter:
 		power_meter.max_value = 1.0
 		power_meter.value = 0
+	
+	# Find the game manager to connect state signals
+	game_manager = get_tree().get_first_node_in_group("game_manager")
+	if game_manager:
+		game_manager.connect("game_state_changed", _on_game_state_changed)
+	else:
+		push_warning("Could not find game manager for cue stick")
+
+# Handle game state changes
+func _on_game_state_changed(new_state):
+	match new_state:
+		GameManager.GameState.READY:
+			is_aiming = false
+			is_power_setting = false
+			shot_taken = false
+			power = 0.0
+			
+			# Update stick visuals for ready state
+			if power_meter:
+				power_meter.value = 0
+				power_meter.visible = false
+			
+			# Make sure we still have a reference to the cue ball
+			if not cue_ball and game_manager:
+				# Try to find the cue ball in the scene
+				cue_ball = get_tree().get_first_node_in_group("cue_ball")
+				if not cue_ball:
+					print("Warning: Could not find cue ball reference for READY state")
+					return
+			
+			# Now setup for ready state
+			setup_for_ready_state()
+			
+		GameManager.GameState.AIMING:
+			is_aiming = true
+			is_power_setting = false
+			
+			# Update trajectory
+			if trajectory_line:
+				trajectory_line.set_trajectory_visible(true)
+				update_trajectory_line()
+			
+		GameManager.GameState.POWER:
+			is_aiming = false
+			is_power_setting = true
+			
+			# Show power meter
+			if power_meter:
+				power_meter.visible = true
+			
+		GameManager.GameState.SHOT:
+			is_aiming = false
+			is_power_setting = false
+			shot_taken = true
+			
+			# Hide UI elements
+			if power_meter:
+				power_meter.visible = false
+				
+			if trajectory_line:
+				trajectory_line.set_trajectory_visible(false)
 
 # Fix the orientation of the stick mesh to ensure the thinner end is near the ball
 func fix_stick_orientation(stick_mesh: MeshInstance3D):
@@ -171,6 +236,27 @@ func setup(ball):
 	# Verify safe distance
 	verify_safe_distance("setup")
 
+# Setup specifically for the READY state
+func setup_for_ready_state():
+	if not cue_ball:
+		print("Cannot setup for ready state: cue ball is null")
+		return
+	
+	# Reset power
+	power = 0.0
+	if power_meter:
+		power_meter.value = 0
+	
+	# Position behind the ball
+	position_stick_behind_ball(current_aim_direction)
+	
+	# Update positions and verify
+	update_head_tail_positions()
+	verify_safe_distance("ready_state")
+	debug_stick_orientation()
+	
+	print("Cue stick ready for player input!")
+
 func update_head_tail_positions():
 	# Calculate head and tail positions based on the stick's current orientation
 	var forward_direction = -global_transform.basis.z.normalized()
@@ -179,8 +265,8 @@ func update_head_tail_positions():
 
 # Check and ensure minimum safe distance between stick and ball during aiming
 func verify_safe_distance(context: String = ""):
-	if not cue_ball or not is_aiming:
-		return true  # Only enforce during aiming
+	if not cue_ball:
+		return true
 	
 	update_head_tail_positions()
 	var head_to_ball_distance = head_position.distance_to(cue_ball.global_position)
@@ -232,7 +318,7 @@ func _physics_process(delta):
 		update_trajectory_line()
 	
 	# If we're simulating the physical stick moving after a shot
-	if not is_aiming and linear_velocity != Vector3.ZERO:
+	if shot_taken and linear_velocity != Vector3.ZERO:
 		# Move the stick according to its velocity
 		position += linear_velocity * delta
 		rotation += angular_velocity * delta
@@ -325,125 +411,65 @@ func update_trajectory_line():
 	trajectory_line.update_trajectory(power, direction)
 
 func _input(event):
-	# Only process input if we're in aiming mode
-	if not is_aiming or not cue_ball:
+	if not cue_ball or not game_manager:
 		return
 	
-	# Handle mouse input for desktop testing
+	# Only process inputs in READY, AIMING, or POWER states
+	if game_manager.game_state == GameManager.GameState.SHOT:
+		return
+	
 	if event is InputEventMouseButton:
 		if event.button_index == MOUSE_BUTTON_LEFT:
 			if event.pressed:
-				# Start aiming
-				touch_start_position = event.position
-				# Show power meter if available
-				if power_meter:
-					power_meter.visible = true
+				# Start aiming if in READY state
+				if game_manager.game_state == GameManager.GameState.READY:
+					touch_start_position = event.position
+					game_manager.change_game_state(GameManager.GameState.AIMING)
+					
+				# Start power setting if in AIMING state
+				elif game_manager.game_state == GameManager.GameState.AIMING:
+					touch_start_position = event.position
+					game_manager.change_game_state(GameManager.GameState.POWER)
 			else:
-				# Execute shot if we were aiming and have some power
-				if power > 0:
-					print("Executing shot with power: ", power)
+				# Handle releasing the button
+				if game_manager.game_state == GameManager.GameState.POWER:
+					# Execute the shot
 					execute_shot()
-				# Hide trajectory line
-				if trajectory_line:
-					trajectory_line.set_trajectory_visible(false)
-				# Hide power meter
-				if power_meter:
-					power_meter.visible = false
-				power = 0
-	
-	elif event is InputEventMouseMotion and Input.is_mouse_button_pressed(MOUSE_BUTTON_LEFT):
-		# Update current position
-		current_touch_position = event.position
-		
-		# Process the drag for aiming and power
-		process_drag_input()
-		
-	# Handle touch input for mobile
-	elif event is InputEventScreenTouch:
-		if event.pressed:
-			# Start aiming
-			touch_start_position = event.position
-			# Show power meter if available
-			if power_meter:
-				power_meter.visible = true
-		else:
-			# Execute shot if we were aiming and have some power
-			if power > 0:
-				print("Executing shot with power: ", power)
-				execute_shot()
-			# Hide trajectory line
-			if trajectory_line:
-				trajectory_line.set_trajectory_visible(false)
-			# Hide power meter
-			if power_meter:
-				power_meter.visible = false
-			power = 0
+					game_manager.change_game_state(GameManager.GameState.SHOT)
 				
-	elif event is InputEventScreenDrag:
-		# Update current touch position
-		current_touch_position = event.position
-		
-		# Process the drag for aiming and power
-		process_drag_input()
+	elif event is InputEventMouseMotion:
+		if game_manager.game_state == GameManager.GameState.READY:
+			# Start aiming when the user begins to drag
+			touch_start_position = event.position
+			game_manager.change_game_state(GameManager.GameState.AIMING)
+		elif game_manager.game_state == GameManager.GameState.AIMING:
+			# Update the direction of the cue stick based on the drag
+			handle_aiming_input(event.position)
 
-# New function to handle both mouse and touch drag
-func process_drag_input():
-	# Calculate drag vector from start position (in screen space)
-	var drag_vector = touch_start_position - current_touch_position
+	elif event is InputEventScreenDrag:
+		if game_manager.game_state == GameManager.GameState.POWER:
+			# Handle power adjustment based on vertical drag
+			handle_power_input(event.position)
+
+# Handle user input for aiming
+func handle_aiming_input(position):
+	if not camera or not cue_ball:
+		return
+		
+	# Calculate the new direction based on the drag position
+	var drag_vector = position - touch_start_position
 	
-	# Only process if drag distance is significant enough to avoid jitter
-	if drag_vector.length() > 5:
-		# Calculate power based on drag distance (with smoothing for lag reduction)
-		var drag_distance = touch_start_position.distance_to(current_touch_position)
-		var target_power = clamp(drag_distance / max_drag_distance, 0.05, 1.0)
-		
-		# Smooth power changes to reduce jitter
-		power = lerp(power, target_power, 0.3)  # Using lerp for smoother power changes
-		
-		# Convert drag direction to 3D world space for aiming
-		var camera = get_viewport().get_camera_3d()
-		if camera:
-			# Use the drag direction to determine aim angle
-			var aim_angle = atan2(drag_vector.x, drag_vector.y)
-			
-			# Create a direction vector based on the angle (in XZ plane)
-			var aim_direction = Vector3(sin(aim_angle), 0, cos(aim_angle))
-			
-			# Smoothly update the aim direction
-			current_aim_direction = current_aim_direction.lerp(aim_direction, 0.3)
-			
-			# Reposition the stick based on this new direction (with immediate positioning)
-			position_stick_for_aim(current_aim_direction)
-		
-		# Store the previous position before pulling back
-		var pre_pullback_position = global_position
-		
-		# Pull the stick back based on power
-		var stick_direction = -global_transform.basis.z.normalized() # Direction from head to tail
-		var pull_back_distance = power * stick_length * 0.5  # Pull back proportional to power
-		
-		# Apply the pull back to the current position (direct positioning)
-		global_position = initial_position + stick_direction * pull_back_distance
-		
-		# Update head and tail positions after repositioning
-		update_head_tail_positions()
-		
-		# Verify we maintain safe distance after pull back
-		if not verify_safe_distance("drag"):
-			# If adjustment was needed, update initial_position to prevent oscillation
-			initial_position = global_position - stick_direction * pull_back_distance
-		
-		# Update power meter if available
-		if power_meter:
-			power_meter.value = power
-		
-		# Update trajectory prediction
-		if trajectory_line:
-			update_trajectory_line()
-		
-		# Debug the orientation during dragging (only occasionally to avoid spam)
-		if Engine.get_physics_frames() % 60 == 0:
-			debug_stick_orientation()
+	# Convert to angle in XZ plane (table plane)
+	var angle = atan2(drag_vector.x, -drag_vector.y)  # Negative Y is forward in screen space
+	
+	# Create direction vector from angle (3D vector)
+	var direction = Vector3(sin(angle), 0, cos(angle))
+	
+	# Position the stick in this direction
+	position_stick_for_aim(direction)
+	
+	# Update aim angle for use in other calculations
+	aim_angle = angle
 
 # Position the stick for aiming in a specific direction
 func position_stick_for_aim(direction: Vector3):
@@ -473,14 +499,54 @@ func position_stick_for_aim(direction: Vector3):
 	# Update head and tail positions
 	update_head_tail_positions()
 	
-	# Store the current aim angle
-	aim_angle = atan2(direction.x, -direction.z)
+	# Store the current aim angle and direction
+	aim_angle = atan2(direction.x, direction.z)
+	current_aim_direction = direction
 	
 	if Engine.get_physics_frames() % 30 == 0:
 		print("Positioned stick for aim: ", global_position, " Direction: ", direction, " Angle: ", rad_to_deg(aim_angle))
 		
 	# Ensure safe distance is maintained
 	verify_safe_distance("aim")
+
+# Handle user input for power
+func handle_power_input(position):
+	if not initial_position or not cue_ball:
+		return
+	
+	# Calculate power based on the vertical position of the drag
+	var power_ratio = position.y / get_viewport().size.y
+	power = clamp(power_ratio, 0.0, 1.0)
+	
+	# Direction is from the stick's current position toward the ball
+	var stick_direction = (cue_ball.global_position - initial_position).normalized()
+	stick_direction.y = 0  # Keep parallel to table
+	
+	# Calculate pull-back distance based on power
+	var pull_back_distance = power * stick_length * 0.5
+	
+	# Pull the stick back
+	global_position = initial_position - stick_direction * pull_back_distance
+	
+	# Make sure we're still looking at the ball
+	look_at(cue_ball.global_position, Vector3.UP)
+	
+	# Ensure we haven't violated the safe distance rule
+	if not verify_safe_distance("drag"):
+		# If adjustment was needed, update initial_position to prevent oscillation
+		initial_position = global_position - stick_direction * pull_back_distance
+	
+	# Update power meter if available
+	if power_meter:
+		power_meter.value = power
+	
+	# Update trajectory prediction
+	if trajectory_line:
+		update_trajectory_line()
+	
+	# Debug the orientation during dragging (only occasionally to avoid spam)
+	if Engine.get_physics_frames() % 60 == 0:
+		debug_stick_orientation()
 
 func execute_shot():
 	if not cue_ball:
@@ -504,9 +570,8 @@ func execute_shot():
 	# Apply forward movement to simulate the "strike"
 	linear_velocity = direction * (actual_power * max_power * 1.5)
 	
-	# Track that shot has been taken and we're no longer aiming
+	# Track that shot has been taken
 	shot_taken = true
-	is_aiming = false
 	
 	# Apply force directly to the ball based on power and direction
 	cue_ball.linear_velocity = direction * (actual_power * max_power)
@@ -514,56 +579,13 @@ func execute_shot():
 	print("Applied linear velocity: ", cue_ball.linear_velocity, " Length: ", cue_ball.linear_velocity.length())
 	print("Shot direction (from head to ball): ", direction)
 	print("Stick is now moving toward ball for strike")
-	
-	# Find the game manager and notify it that a shot has been taken
-	var game_manager = get_tree().get_first_node_in_group("game_manager")
-	if game_manager:
-		game_manager.game_state = game_manager.GameState.BALL_IN_MOTION
-		
-	# Set a timer to reset after shot
-	var timer = get_tree().create_timer(3.0)
-	timer.timeout.connect(_on_shot_complete)
-
-func _on_shot_complete():
-	# Move the stick away and prepare for next shot
-	if not is_instance_valid(self) or not is_instance_valid(cue_ball):
-		return
-	
-	# Stop the stick
-	linear_velocity = Vector3.ZERO
-	angular_velocity = Vector3.ZERO
-	
-	print("Shot complete, resetting stick")
-	
-	# Prepare to reset the stick
-	await get_tree().create_timer(0.5).timeout
-	
-	# Check if all balls stopped moving
-	var game_manager = get_tree().get_first_node_in_group("game_manager")
-	if game_manager and game_manager.has_method("are_all_balls_stopped") and game_manager.are_all_balls_stopped():
-		reset_for_next_shot()
-
-func reset_for_next_shot():
-	# Reset cue stick state for next shot
-	shot_taken = false
-	is_aiming = true
-	power = 0.0
-	
-	# Reposition the stick
-	if is_instance_valid(cue_ball):
-		# Use default direction
-		var initial_dir = Vector3(0, 0, -1)
-		position_stick_behind_ball(initial_dir)
-		initial_position = global_position
-		last_aim_position = global_position
-		print("Stick reset for next shot at position: ", global_position)
-		
-		# Verify orientation after reset
-		debug_stick_orientation()
-		
-		# Verify safe distance
-		verify_safe_distance("reset")
 
 # Get the current aim angle in radians
 func get_aim_angle() -> float:
 	return aim_angle
+
+func update_cue_stick_direction(direction):
+	# Convert screen direction to world direction if necessary
+	# Update the cue stick's orientation based on the new direction
+	var angle = atan2(direction.x, direction.y)
+	rotation_degrees.y = rad_to_deg(angle)

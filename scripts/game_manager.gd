@@ -22,9 +22,12 @@ var game_over = false
 var trajectory_line
 var all_balls_stopped = true
 
-# Game states
-enum GameState { AIMING, BALL_IN_MOTION, TURN_CHANGE, GAME_OVER }
-var game_state = GameState.AIMING
+# Game states for turn management
+enum GameState { READY, AIMING, POWER, SHOT }
+var game_state = GameState.READY
+
+# Signal for state changes
+signal game_state_changed(new_state)
 
 func _ready():
 	# Add to the game_manager group for easier discovery
@@ -52,6 +55,9 @@ func _ready():
 	
 	# Start the game
 	rules.start_game()
+	
+	# Enter initial READY state
+	change_game_state(GameState.READY)
 
 func setup_table():
 	# First instantiate the physical table
@@ -88,23 +94,78 @@ func setup_trajectory():
 
 func _process(delta):
 	match game_state:
+		GameState.READY:
+			# Waiting for player to start aiming
+			# This is primarily handled by the cue_stick input events
+			pass
+			
 		GameState.AIMING:
-			# In aiming state, player can control the cue stick
+			# Player is currently aiming the cue stick
 			# This is handled by the cue_stick script
 			pass
 			
-		GameState.BALL_IN_MOTION:
+		GameState.POWER:
+			# Player is setting the power of the shot
+			# This is handled by the cue_stick script
+			pass
+			
+		GameState.SHOT:
 			# Check if all balls have stopped moving
 			if all_balls_have_stopped():
 				process_shot_outcome()
-				
-		GameState.TURN_CHANGE:
-			# Handle turn change logic here
-			game_state = GameState.AIMING
+
+# Change the game state and notify interested objects
+func change_game_state(new_state):
+	var old_state = game_state
+	game_state = new_state
+	
+	# Notify about the state change
+	emit_signal("game_state_changed", new_state)
+	
+	# Log the state change
+	print("Game state changed: ", state_to_string(old_state), " -> ", state_to_string(new_state))
+	
+	# Handle specific state transitions
+	match new_state:
+		GameState.READY:
+			if is_instance_valid(cue_stick):
+				cue_stick.setup_for_ready_state()
 			
-		GameState.GAME_OVER:
-			# Handle game over state
-			pass
+			if trajectory_line:
+				trajectory_line.set_trajectory_visible(false)
+				
+		GameState.AIMING:
+			if trajectory_line:
+				trajectory_line.set_trajectory_visible(true)
+				
+		GameState.POWER:
+			# Power state-specific setup
+			var power_meter = get_node_or_null("/root/NineBallGame/UI/PowerMeter")
+			if power_meter:
+				power_meter.visible = true
+				
+		GameState.SHOT:
+			# Shot state-specific setup
+			var power_meter = get_node_or_null("/root/NineBallGame/UI/PowerMeter")
+			if power_meter:
+				power_meter.visible = false
+				
+			if trajectory_line:
+				trajectory_line.set_trajectory_visible(false)
+
+# Convert state enum to string for debugging
+func state_to_string(state):
+	match state:
+		GameState.READY:
+			return "READY"
+		GameState.AIMING:
+			return "AIMING"
+		GameState.POWER:
+			return "POWER"
+		GameState.SHOT:
+			return "SHOT"
+		_:
+			return "UNKNOWN"
 
 func all_balls_have_stopped():
 	# Check if all balls have stopped moving
@@ -118,7 +179,7 @@ func all_balls_have_stopped():
 		
 	return true
 
-# New method specifically for the cue stick to call
+# Method specifically for the cue stick to call
 func are_all_balls_stopped():
 	return all_balls_have_stopped()
 
@@ -127,17 +188,16 @@ func process_shot_outcome():
 	var outcome = rules.process_shot_outcome(last_ball_hit)
 	
 	if game_over:
-		game_state = GameState.GAME_OVER
+		# Handle game over state
+		update_game_info("Game Over - Player " + str(outcome.winner_id) + " Wins!")
 	else:
-		game_state = GameState.TURN_CHANGE
+		# Transition back to READY state for the next shot
+		change_game_state(GameState.READY)
 		
-	# Reset cue stick for next shot
-	cue_stick.reset_for_next_shot()
-	
-	# If it's player's turn again, set up for next shot
-	if game_state == GameState.AIMING:
-		# Make sure cue stick is properly connected to the cue ball
-		cue_stick.setup(cue_ball)
+		# If it's player's turn again, set up for next shot
+		if is_instance_valid(cue_stick) and is_instance_valid(cue_ball):
+			# Make sure cue stick is properly connected to the cue ball
+			cue_stick.setup(cue_ball)
 
 func _on_ball_entered_pocket(ball):
 	# Let the rules handle the ball entering a pocket
@@ -183,7 +243,7 @@ func reset_game():
 	table_setup.reset_table()
 	
 	# Reset game state
-	game_state = GameState.AIMING
+	change_game_state(GameState.READY)
 	current_player = 1
 	last_ball_hit = -1
 	game_over = false
